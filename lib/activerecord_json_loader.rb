@@ -3,19 +3,19 @@ require "activerecord_json_loader/version"
 
 module ActiverecordJsonLoader
   extend ActiveSupport::Concern
-  module ClassMethod
-    def self.import_from_json(filename)
+  module ClassMethods
+    def import_from_json(filename)
       json_data = self.load_json filename
       json_data.each do |row_data|
         self.import_row_data row_data
       end
     end
 
-    def self.load_json(filename)
+    def load_json(filename)
       json_data = open(filename) { |io| JSON.load io }
     end
 
-    def self.import_row_data(row_data)
+    def import_row_data(row_data)
       model_attributes, another_attributes = row_data.partition { |k, _v| self.attribute_names.include? k }.map(&:to_h)
       record_instance = if model_attributes["id"]
                           self.where(id: model_attributes["id"]).first_or_initialize
