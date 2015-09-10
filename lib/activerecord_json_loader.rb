@@ -4,7 +4,7 @@ require "activerecord_json_loader/version"
 module ActiverecordJsonLoader
   extend ActiveSupport::Concern
   included do
-    def self.import(filename)
+    def self.import_from_json(filename)
       json_data = self.load_json filename
       json_data.each do |row_data|
         self.import_row_data row_data
