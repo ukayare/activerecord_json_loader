@@ -3,7 +3,7 @@ require "activerecord_json_loader/version"
 
 module ActiverecordJsonLoader
   extend ActiveSupport::Concern
-  included do
+  module ClassMethod
     def self.import_from_json(filename)
       json_data = self.load_json filename
       json_data.each do |row_data|
@@ -37,41 +37,41 @@ module ActiverecordJsonLoader
         record_instance.update_with_version
       end
     end
+  end
 
-    def update_with_version
-      if self.respond_to? :version
-        self.version += 1
-      end
-      self.class.with_writable { self.save! }
+  def update_with_version
+    if self.respond_to? :version
+      self.version += 1
     end
+    self.class.with_writable { self.save! }
+  end
 
-    def delete_remain_relation(remain_instances)
-      return false if remain_instances.blank?
-      remain_instances.each do |remain_instance|
-        remain_instance.class.with_writable { remain_instance.destroy }
-      end
-      true
+  def delete_remain_relation(remain_instances)
+    return false if remain_instances.blank?
+    remain_instances.each do |remain_instance|
+      remain_instance.class.with_writable { remain_instance.destroy }
     end
+    true
+  end
 
-    def update_relation_instance(relation_name, value)
-      relation_instance = self.try(relation_name) || self.try("build_#{relation_name}")
-      return false if relation_instance.blank?
-      relation_instance.attributes = value
-      return false unless relation_instance.changed?
+  def update_relation_instance(relation_name, value)
+    relation_instance = self.try(relation_name) || self.try("build_#{relation_name}")
+    return false if relation_instance.blank?
+    relation_instance.attributes = value
+    return false unless relation_instance.changed?
+    relation_instance.class.with_writable { relation_instance.save }
+  end
+
+  def update_relation_instances(relation_name, values)
+    relation_instances = self.try(relation_name).all
+    updated_flag = false
+    values.each_with_index do |relation_attributes, i|
+      relation_instance = relation_instances[i] || self.try(relation_name).build
+      relation_instance.attributes = relation_attributes
+      next unless relation_instance.changed?
       relation_instance.class.with_writable { relation_instance.save }
+      updated_flag = true
     end
-
-    def update_relation_instances(relation_name, values)
-      relation_instances = self.try(relation_name).all
-      updated_flag = false
-      values.each_with_index do |relation_attributes, i|
-        relation_instance = relation_instances[i] || self.try(relation_name).build
-        relation_instance.attributes = relation_attributes
-        next unless relation_instance.changed?
-        relation_instance.class.with_writable { relation_instance.save }
-        updated_flag = true
-      end
-      updated_flag || self.delete_remain_relation(relation_instances[values.size..-1])
-    end
+    updated_flag || self.delete_remain_relation(relation_instances[values.size..-1])
   end
 end
