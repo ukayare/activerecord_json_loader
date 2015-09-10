@@ -43,13 +43,21 @@ module ActiverecordJsonLoader
     if self.respond_to? :version
       self.version += 1
     end
-    self.class.with_writable { self.save! }
+    if self.class.respond_to? :with_writable
+      self.class.with_writable { self.save! }
+    else
+      self.save!
+    end
   end
 
   def delete_remain_relation(remain_instances)
     return false if remain_instances.blank?
     remain_instances.each do |remain_instance|
-      remain_instance.class.with_writable { remain_instance.destroy }
+      if self.class.respond_to? :with_writable
+        remain_instance.class.with_writable { remain_instance.destroy }
+      else
+        remain_instance.destroy
+      end
     end
     true
   end
@@ -59,7 +67,7 @@ module ActiverecordJsonLoader
     return false if relation_instance.blank?
     relation_instance.attributes = value
     return false unless relation_instance.changed?
-    relation_instance.class.with_writable { relation_instance.save }
+    relation_instance.update_with_version
   end
 
   def update_relation_instances(relation_name, values)
@@ -69,9 +77,8 @@ module ActiverecordJsonLoader
       relation_instance = relation_instances[i] || self.try(relation_name).build
       relation_instance.attributes = relation_attributes
       next unless relation_instance.changed?
-      relation_instance.class.with_writable { relation_instance.save }
+      relation_instance.update_with_version
       updated_flag = true
     end
     updated_flag || self.delete_remain_relation(relation_instances[values.size..-1])
-  end
 end
