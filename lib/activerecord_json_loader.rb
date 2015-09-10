@@ -6,8 +6,13 @@ module ActiverecordJsonLoader
   module ClassMethods
     def import_from_json(filename)
       json_data = self.load_json filename
-      json_data.each do |row_data|
-        self.import_row_data row_data
+      case json_data
+      when Array
+        json_data.each do |row_data|
+          self.import_row_data row_data
+        end
+      when Hash
+        self.import_row_data json_data
       end
     end
 
@@ -15,12 +20,23 @@ module ActiverecordJsonLoader
       json_data = open(filename) { |io| JSON.load io }
     end
 
-    def import_row_data(row_data)
+    def import_data(json_data)
+      case json_data
+      when Array
+        json_data.each do |row_data|
+          self.import_row_data row_data
+        end
+      when Hash
+        self.import_row_data json_data
+      end
+    end
+
+    def import_row_data(row_data, klass=self)
       model_attributes, another_attributes = row_data.partition { |k, _v| self.attribute_names.include? k }.map(&:to_h)
       record_instance = if model_attributes["id"]
-                          self.where(id: model_attributes["id"]).first_or_initialize
+                          klass.where(id: model_attributes["id"]).first_or_initialize
                         else
-                          self.new
+                          klass.new
                         end
       record_instance.attributes = model_attributes
       relation_updated_flag = another_attributes.any? do |key, value|
@@ -28,7 +44,7 @@ module ActiverecordJsonLoader
         when Hash
           record_instance.update_relation_instance key, value
         when Array
-          record_instance.update_relation_instances key, value
+          klass.import_row_data value, key.classify.constantize
         else
           false
         end
