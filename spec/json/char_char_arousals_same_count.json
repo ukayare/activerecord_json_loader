@@ -1,0 +1,9 @@
+{
+  "id": 1,
+  "name": "hogege",
+  "char_arousals": [
+    { "effect_id": 4 },
+    { "effect_id": 5 },
+    { "effect_id": 6 }
+  ]
+}

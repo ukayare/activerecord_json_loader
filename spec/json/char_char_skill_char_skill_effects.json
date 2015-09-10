@@ -1,0 +1,12 @@
+{
+  "id": 1,
+  "name": "hogege",
+  "char_skill": {
+    "name": "eternal_force_blizzsrd",
+    "char_skill_effects":[
+      { "value": 1 },
+      { "value": 2 },
+      { "value": 3 }
+    ]
+  }
+}

@@ -16,6 +16,11 @@ module ActiverecordJsonLoader
       end
     end
 
+    def divide_attributes(row_data)
+      row_data.partition { |k, _v| self.attribute_names.include? k }.map(&:to_h)
+    end
+
+    protected
     def load_json(filename)
       json_data = open(filename) { |io| JSON.load io }
     end
@@ -32,26 +37,40 @@ module ActiverecordJsonLoader
     end
 
     def import_row_data(row_data, klass=self)
-      model_attributes, another_attributes = row_data.partition { |k, _v| self.attribute_names.include? k }.map(&:to_h)
-      record_instance = if model_attributes["id"]
-                          klass.where(id: model_attributes["id"]).first_or_initialize
+      record_instance = if row_data["id"]
+                          klass.where(id: row_data["id"]).first_or_initialize
                         else
                           klass.new
                         end
-      record_instance.attributes = model_attributes
-      relation_updated_flag = another_attributes.any? do |key, value|
-        case value
-        when Hash
-          record_instance.update_relation_instance key, value
-        when Array
-          klass.import_row_data value, key.classify.constantize
-        else
-          false
+      record_instance.update_row_data row_data
+    end
+  end
+
+  def update_row_data(row_data)
+    self_attributes, another_attributes = self.class.divide_attributes row_data
+    self.attributes = self_attributes
+    if self.changed?
+      self.update_with_version
+    end
+    relation_updated_flag = another_attributes.any? do |key, value|
+      case value
+      when Hash
+        relation_instance = self.try(key) || self.try("build_#{key}")
+        relation_instance.update_row_data value
+      when Array
+        relation_instances = self.try(key).all
+        updated_flag = false
+        value.each_with_index do |relation_attributes, i|
+          relation_instance = relation_instances[i] || self.try(key).build
+          relation_instance.update_row_data relation_attributes
         end
+        updated_flag || self.delete_remain_relation(relation_instances[value.size..-1])
+      else
+        false
       end
-      if record_instance.changed? || relation_updated_flag
-        record_instance.update_with_version
-      end
+    end
+    if relation_updated_flag
+      self.update_with_version
     end
   end
 
@@ -97,4 +116,5 @@ module ActiverecordJsonLoader
       updated_flag = true
     end
     updated_flag || self.delete_remain_relation(relation_instances[values.size..-1])
+  end
 end
