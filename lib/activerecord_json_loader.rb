@@ -6,14 +6,7 @@ module ActiverecordJsonLoader
   module ClassMethods
     def import_from_json(filename)
       json_data = self.load_json filename
-      case json_data
-      when Array
-        json_data.each do |row_data|
-          self.import_row_data row_data
-        end
-      when Hash
-        self.import_row_data json_data
-      end
+      self.import_data json_data
     end
 
     def divide_attributes(row_data)
