@@ -40,41 +40,48 @@ module ActiverecordJsonLoader
   end
 
   def update_row_data(row_data)
+    origin_updated = false
+    relation_updated = false
     self_attributes, another_attributes = self.class.divide_attributes row_data
     self.attributes = self_attributes
     if self.changed?
       self.update_with_version
+      origin_updated = true
     end
-    relation_updated_flag = another_attributes.any? do |key, value|
+    return origin_updated if another_attributes.blank?
+    relation_updated = another_attributes.select do |key, value|
       case value
       when Hash
         relation_instance = self.try(key) || self.try("build_#{key}")
         relation_instance.update_row_data value
       when Array
-        relation_instances = self.try(key).all
+        relation_instances = self.try(key).to_a
         updated_flag = false
         value.each_with_index do |relation_attributes, i|
           relation_instance = relation_instances[i] || self.try(key).build
-          relation_instance.update_row_data relation_attributes
+          relation_updated = relation_instance.update_row_data relation_attributes
+          updated_flag ||= relation_updated
         end
-        updated_flag || self.delete_remain_relation(relation_instances[value.size..-1])
+        relation_deleted = self.delete_remain_relation(relation_instances[value.size..-1])
+        updated_flag || relation_deleted
       else
         false
       end
-    end
-    if relation_updated_flag
+    end.present?
+    if (origin_updated ^ relation_updated)
       self.update_with_version
     end
+    relation_updated
   end
 
   def update_with_version
-    if self.respond_to? :version
-      self.version += 1
+    if self.respond_to?(:version)
+      self.version = self.version.to_i + 1
     end
     if self.class.respond_to? :with_writable
-      self.class.with_writable { self.save! }
+      self.class.with_writable { self.save }
     else
-      self.save!
+      self.save
     end
   end
 

@@ -24,3 +24,18 @@ end
 class CharSkillEffect < ActiveRecord::Base
   include ActiverecordJsonLoader
 end
+
+class CharWithVersion < ActiveRecord::Base
+  include ActiverecordJsonLoader
+  has_many :char_arousals
+  has_one :char_skill
+end
+
+class Item < ActiveRecord::Base
+  include ActiverecordJsonLoader
+  has_many :item_effects
+end
+
+class ItemEffect < ActiveRecord::Base
+  include ActiverecordJsonLoader
+end

@@ -3,8 +3,6 @@ ActiveRecord::Schema.define(version: 0) do
     t.string "name", null: false
     t.datetime "created_at",   null: false
     t.datetime "updated_at",   null: false
-
-    t.index "name", unique: false
   end
 
   create_table "char_arousals", force: :cascade do |t|
@@ -32,6 +30,22 @@ ActiveRecord::Schema.define(version: 0) do
     t.datetime "updated_at",   null: false
 
     t.index "char_skill_id", unique: false
+  end
+
+  create_table "items", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "version", null: false
+    t.datetime "created_at",   null: false
+    t.datetime "updated_at",   null: false
+  end
+  
+  create_table "item_effects", force: :cascade do |t|
+    t.integer  "item_id", null: false
+    t.integer  "value", null: false
+    t.datetime "created_at",   null: false
+    t.datetime "updated_at",   null: false
+
+    t.index "item_id", unique: false
   end
 end
 

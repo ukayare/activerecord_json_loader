@@ -95,5 +95,71 @@ describe ActiverecordJsonLoader do
         end
       end
     end
+
+    context "version attribute exist" do
+      context "when new data" do
+        it "import success and version number is 1" do
+          Item.import_from_json File.expand_path "../json/items.json", __FILE__
+          expect(Item.all.count).to eq 3
+          Item.all.each do |item|
+            expect(item.version).to eq 1
+          end
+        end
+
+        context "when relational data exist" do
+          it "import success and version number is 1" do
+            Item.import_from_json File.expand_path "../json/items_items_effects.json", __FILE__
+            expect(Item.all.count).to eq 3
+            Item.all.each do |item|
+              expect(item.version).to eq 1
+              expect(item.item_effects.count).to eq 3
+            end
+          end
+
+          context "and when different data already exist" do
+            before do
+              Item.import_from_json File.expand_path "../json/items_items_effects.json", __FILE__
+            end
+            it "import success and version number that different data is chenged" do
+              before_versions = Item.pluck(:version)
+              before_names = Item.pluck(:name)
+              before_effects = Item.find(1).item_effects.to_a
+              Item.import_from_json File.expand_path "../json/items_items_effects_different.json", __FILE__
+              expect(Item.all.count).to eq 3
+              expect(Item.pluck(:version)).not_to eq before_versions
+              expect(Item.pluck(:name)).to eq before_names
+              expect(Item.find(1).version).to eq 2
+              expect(Item.find(1).item_effects.pluck(:value)).not_to eq before_effects.map(&:value)
+              expect(Item.find(1).item_effects.pluck(:id)).to eq before_effects.map(&:id)
+            end
+          end
+        end
+      end
+
+      context "when data already exist" do
+        before do
+          Item.import_from_json File.expand_path "../json/items.json", __FILE__
+        end
+        context "and when same data" do
+          it "import success and version number is not chenged" do
+            before_versions = Item.pluck(:version)
+            Item.import_from_json File.expand_path "../json/items.json", __FILE__
+            expect(Item.all.count).to eq 3
+            expect(Item.pluck(:version)).to eq before_versions
+          end
+        end
+
+        context "and when different data exist" do
+          it "import success and version number that different data is chenged" do
+            before_versions = Item.pluck(:version)
+            Item.import_from_json File.expand_path "../json/items_different.json", __FILE__
+            expect(Item.all.count).to eq 3
+            expect(Item.pluck(:version)).not_to eq before_versions
+            expect(Item.find(1).name).to eq "gaogao"
+            expect(Item.find(1).version).to eq 2
+          end
+        end
+      end
+    end
   end
 end
