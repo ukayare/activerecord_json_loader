@@ -43,13 +43,25 @@ module ActiverecordJsonLoader
     origin_updated = false
     relation_updated = false
     self_attributes, another_attributes = self.class.divide_attributes row_data
-    self.attributes = self_attributes
-    if self.changed?
-      self.update_with_version
-      origin_updated = true
-    end
+    origin_updated = self.update_origin self_attributes
     return origin_updated if another_attributes.blank?
-    relation_updated = another_attributes.select do |key, value|
+    relation_updated = self.update_relation another_attributes
+    if (origin_updated ^ relation_updated)
+      self.update_with_version
+    end
+    relation_updated
+  end
+
+  def update_origin(self_attributes)
+    self_attributes
+    self.attributes = self_attributes
+    return false unless self.changed?
+    self.update_with_version
+    true
+  end
+
+  def update_relation(another_attributes)
+    another_attributes.select do |key, value|
       case value
       when Hash
         relation_instance = self.try(key) || self.try("build_#{key}")
@@ -68,10 +80,6 @@ module ActiverecordJsonLoader
         false
       end
     end.present?
-    if (origin_updated ^ relation_updated)
-      self.update_with_version
-    end
-    relation_updated
   end
 
   def update_with_version
