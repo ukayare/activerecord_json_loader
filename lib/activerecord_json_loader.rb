@@ -13,6 +13,11 @@ module ActiverecordJsonLoader
       row_data.partition { |k, _v| self.attribute_names.include? k }.map(&:to_h)
     end
 
+    def divide_relation_key(another_attributes)
+      relation_keys = self.reflect_on_all_associations.map(&:name).map(&:to_s)
+      another_attributes.select { |key, value| relation_keys.include? key }
+    end
+
     protected
     def load_json(filename)
       json_data = open(filename) { |io| JSON.load io }
@@ -46,7 +51,7 @@ module ActiverecordJsonLoader
     origin_updated = self.update_origin self_attributes
     return origin_updated if another_attributes.blank?
     relation_updated = self.update_relation another_attributes
-    if (origin_updated ^ relation_updated)
+    if (!origin_updated && relation_updated)
       self.update_with_version
     end
     relation_updated
@@ -61,7 +66,7 @@ module ActiverecordJsonLoader
   end
 
   def update_relation(another_attributes)
-    another_attributes.select do |key, value|
+     self.class.divide_relation_key(another_attributes).select do |key, value|
       case value
       when Hash
         relation_instance = self.try(key) || self.try("build_#{key}")
@@ -81,6 +86,7 @@ module ActiverecordJsonLoader
       end
     end.present?
   end
+
 
   def update_with_version
     if self.respond_to?(:version)

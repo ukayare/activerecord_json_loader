@@ -161,5 +161,14 @@ describe ActiverecordJsonLoader do
         end
       end
     end
+
+    context "when no relation attribute key exist" do
+      it "imported success and no relation is not " do
+        Item.import_from_json File.expand_path "../json/items_diff_relation_attributes.json", __FILE__
+        expect(Item.all.count).to eq 3
+        expect(Item.pluck(:version)).to eq [1, 1, 1]
+        expect(Item.find(1).name).to eq "hoge"
+      end
+    end
   end
 end
