@@ -136,6 +136,7 @@ Also, having assosiation and updating child association, parent version is updat
 
 * If id does not exist json's attributes, new record will be created. As long as it does not want this thing , always please do put the id.
 * Case of has_many association existed, always sync import data. Example for previous model structure (item and item_effect), if the effect associated with the item Two importing the data associated with three one state , and is adjusted to two.
+* belong_to assosiasion is not supported
 ```
 when before imported data is
   {
