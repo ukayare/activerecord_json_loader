@@ -130,13 +130,13 @@ You can also import in the same way if it multistage association in the correct 
 ### Versioning number
 If importing target schema has version column, It will be increment automatically each time a record is updated.
 But, if same data importing (no change), version is not updated.
-Also, having assosiation and updating child association, parent version is updated
+Also, having assosiation and updating child association, parent version is updated.
+Furthermore, when version is updated, version number is that obtained by adding 1 to the highest number in all data before the update
 
 ## Note that
 
 * If id does not exist json's attributes, new record will be created. As long as it does not want this thing , always please do put the id.
 * Case of has_many association existed, always sync import data. Example for previous model structure (item and item_effect), if the effect associated with the item Two importing the data associated with three one state , and is adjusted to two.
-* belong_to assosiasion is not supported
 ```
 when before imported data is
   {
@@ -162,7 +162,12 @@ the result is that..
 Item.find(1).item_effects
 >> [#<ItemEffect id: 1, item_id: 1, value: 1, created_at: "2015-09-15 09:32:19", updated_at: "2015-09-15 09:32:19">, #<ItemEffect id: 2, item_id: 1, value: 2, created_at: "2015-09-15 09:32:19", updated_at: "2015-09-15 09:32:19">] 
 ```
-
+* belong_to assosiasion is not supported
+* default versioning is maybe undesirable for you. The reason is that is processing to get the latest version is published full scan query.
+ * If you think you undesirable this, this method should be overridden to get the latest version in a different way.
+ * ex)
+ * using cache store latest version.
+ * using model for version information.
 
 ## Development
 
