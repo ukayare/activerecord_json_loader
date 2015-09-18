@@ -159,6 +159,22 @@ describe ActiverecordJsonLoader do
             expect(Item.find(1).version).to eq 2
           end
         end
+
+        context "and when each version differed" do
+          before do
+            item = Item.find(2)
+            item.version = 10
+            item.save
+          end
+          it "import success and version number that different data is chenged" do
+            before_versions = Item.pluck(:version)
+            Item.import_from_json File.expand_path "../json/items_different.json", __FILE__
+            expect(Item.all.count).to eq 3
+            expect(Item.pluck(:version)).not_to eq before_versions
+            expect(Item.find(1).name).to eq "gaogao"
+            expect(Item.find(1).version).to eq 11
+          end
+        end
       end
     end
 
