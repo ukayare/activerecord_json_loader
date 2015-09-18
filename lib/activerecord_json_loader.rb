@@ -42,11 +42,13 @@ module ActiverecordJsonLoader
       latest_version = self.get_latest_version
       case json_data
       when Array
-        json_data.each do |row_data|
+        json_data.select do |row_data|
           self.import_row_data row_data, latest_version
-        end
+        end.present?
       when Hash
         self.import_row_data json_data, latest_version
+      else
+        false
       end
     end
 
@@ -69,8 +71,10 @@ module ActiverecordJsonLoader
     relation_updated = self.update_relation another_attributes
     if (!origin_updated && relation_updated)
       self.update_with_version latest_version
+      true
+    else
+      false
     end
-    relation_updated
   end
 
   def update_origin(self_attributes, latest_version)
