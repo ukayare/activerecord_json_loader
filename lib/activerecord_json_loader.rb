@@ -1,10 +1,16 @@
 require "active_support/concern"
 require "activerecord_json_loader/version"
+require "activerecord_json_loader/csv_converter"
 
 module ActiverecordJsonLoader
   extend ActiveSupport::Concern
 
   module ClassMethods
+    def import_from_csv(filename)
+      csv_data = ActiverecordJsonLoader::CsvConverter.convert_csv_to_hash(filename)
+      self.import_data csv_data
+    end
+
     def import_from_json(filename)
       json_data = self.load_json filename
       self.import_data json_data

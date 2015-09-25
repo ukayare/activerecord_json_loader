@@ -187,4 +187,13 @@ describe ActiverecordJsonLoader do
       end
     end
   end
+  describe "#import_from_csv" do
+    context "single data of json" do
+      it "imported data" do
+        Char.import_from_csv File.expand_path "../csv/char.csv", __FILE__
+        expect(Char.exists?(id: 1)).to be true
+        expect(Char.all.count).to be 2
+      end
+    end
+  end
 end
